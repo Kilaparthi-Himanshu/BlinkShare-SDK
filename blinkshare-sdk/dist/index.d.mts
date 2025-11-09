@@ -1,6 +1,6 @@
 interface CreateLinkOptions {
     fileUrl: string;
-    expiersIn: string;
+    expiresIn: string;
     maxClicks: number;
 }
 interface BlinkOptions {

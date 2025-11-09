@@ -1,16 +1,16 @@
-import { Blink } from '../../blinkshare-sdk/src';
+import { Blink } from '../../blinkshare-sdk/dist';
 
 function App() {
     const blink = new Blink({
-        apiKey: "blink_public_b6a06a18fd05b49408e15741836f272fada6df960aa0222d76bf71491ddf8c36",
+        apiKey: import.meta.env.VITE_BLINK_SECURE_LINKS_API,
         baseUrl: "http://localhost:3000/api"
     });
 
     async function getResult() {
         const result = await blink.createLink({
-            fileUrl: "http://localhost:5173/text.txt",
-            expiersIn: "10m",
-            maxClicks: 2
+            fileUrl: "https://ichef.bbci.co.uk/images/ic/1200xn/p07h3dgm.jpg",
+            expiresIn: "10s",
+            maxClicks: 10
         });
 
         console.log(result);
