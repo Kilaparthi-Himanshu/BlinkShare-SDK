@@ -1,4 +1,10 @@
 import { detectEnvironment } from "./utils/detectEnvironment";
+import { encryptFile } from "./utils/encrypt";
+
+export interface BlinkOptions {
+    apiKey: string;
+    baseUrl?: string;
+}
 
 export interface CreateLinkOptions {
     fileUrl: string;
@@ -6,9 +12,11 @@ export interface CreateLinkOptions {
     maxClicks: number;
 }
 
-export interface BlinkOptions {
-    apiKey: string;
-    baseUrl?: string;
+export interface CreateEncryptedLinkOptions {
+    file: File;
+    expiresIn: string;
+    maxClicks: number;
+    secretKey: string;
 }
 
 export class Blink {
@@ -38,5 +46,46 @@ export class Blink {
         });
         if (!res.ok) throw new Error(await res.text());
         return res.json() as Promise<{ url: string }>;
+    }
+
+    /**
+    * Encrypts the provided file with a user-supplied secret key (AES-GCM)
+    * and uploads the ciphertext to BlinkShare's API.
+    */
+    async createEncryptedLink(options: CreateEncryptedLinkOptions) {
+        const { file, expiresIn = "10m", maxClicks = 1, secretKey } = options;
+        const environment = detectEnvironment();
+
+        // const maxSize = 50 * 1024 * 1024; // 50MB
+        // console.log(maxSize);
+        // if (file.size > maxSize) {
+        //      throw new Error("Exceeds max file size of 50MB");
+        //     return;
+        // } // Need to handle either here or on the API
+
+        const encryptedFile = await encryptFile(file, secretKey);
+
+        const formData = new FormData();
+        formData.append("file", encryptedFile, "encrypted.bin");
+        formData.append("expiresIn", expiresIn);
+        formData.append("maxClicks", maxClicks.toString());
+
+        const res = await fetch(`${this.baseUrl}/links/createEncryptedLink`, {
+            method: "POST",
+            headers: {
+                "x-blink-key": this.apiKey,
+                "x-blink-env": environment
+            },
+            body: formData
+        });
+        if (!res.ok) throw new Error(await res.text());
+        const data = await res.json();
+
+        return {
+            url: data.url,
+            expiresIn,
+            maxClicks,
+            info: "🔐 Remember: share your secret key securely with the recipient.",
+        };
     }
 }
