@@ -4,6 +4,7 @@ import { Blink } from '../../blinkshare-sdk/src';
 function App() {
     const fileRef = useRef<HTMLInputElement>(null);
     const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+    const [url, setUrl] = useState("");
 
     const blink = new Blink({
         apiKey: import.meta.env.VITE_BLINK_SECURE_LINKS_API,
@@ -40,6 +41,19 @@ function App() {
         console.log(result);
     }
 
+    async function fetchEncryptedUrl() {
+        if (!url) return;
+        const result = await fetch(url, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ secretKey: "51423" })
+        });
+
+        console.log(result);
+    }
+
     return (
         <div style={{
             display: "flex",
@@ -47,14 +61,19 @@ function App() {
             width: "max-content"
         }}>
             <button onClick={getCreateLinkResult}>Test SDK CreateLink</button>
-            <button onClick={getCreateEncryptedLinkResult}>Test SDK CreateEncryptedLink</button>
-            <div onClick={() => fileRef?.current?.click()}>Upload File</div>
+            <div>Upload File</div>
             <input 
                 type="file" 
-                className="hidden" 
                 ref={fileRef} 
                 onChange={handleFileChange} 
             />
+            <button onClick={getCreateEncryptedLinkResult}>Test SDK CreateEncryptedLink</button>
+            <span>Enter URL:</span>
+            <input 
+                type="text"
+                onChange={(e) => setUrl(e.target.value)}
+            />
+            <button onClick={fetchEncryptedUrl}>Fetch URL</button>
         </div>
     );
 }
