@@ -5,6 +5,7 @@ function App() {
     const fileRef = useRef<HTMLInputElement>(null);
     const [uploadedFile, setUploadedFile] = useState<File | null>(null);
     const [url, setUrl] = useState("");
+    const [encryptedUrl, setEncryptedUrl] = useState("");
 
     const blink = new Blink({
         apiKey: import.meta.env.VITE_BLINK_SECURE_LINKS_API,
@@ -13,9 +14,10 @@ function App() {
 
     async function getCreateLinkResult() {
         const result = await blink.createLink({
-            fileUrl: "https://ichef.bbci.co.uk/images/ic/1200xn/p07h3dgm.jpg",
-            expiresIn: "10s",
-            maxClicks: 10
+            // fileUrl: "https://ichef.bbci.co.uk/images/ic/1200xn/p07h3dgm.jpg",
+            fileUrl: "http://localhost:5173/bullet_hole.png",
+            expiresIn: "30m",
+            maxClicks: 3
         });
 
         console.log(result);
@@ -33,7 +35,7 @@ function App() {
 
         const result = await blink.createEncryptedLink({
             file: uploadedFile,
-            expiresIn: "10m",
+            expiresIn: "30m",
             maxClicks: 10,
             secretKey: "51423",
         });
@@ -41,9 +43,27 @@ function App() {
         console.log(result);
     }
 
-    async function fetchEncryptedUrl() {
+    async function fetchUrl() {
         if (!url) return;
-        const result = await fetch(url, {
+        const res = await fetch(url, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json"
+            }
+        });
+
+        if (!res.ok) {
+            console.error(await res.json());
+            return;
+        }
+
+        await blink.downloadFile(res);
+        console.log("File downloaded!");
+    }
+
+    async function fetchEncryptedUrl() {
+        if (!encryptedUrl) return;
+        const res = await fetch(encryptedUrl, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -51,7 +71,13 @@ function App() {
             body: JSON.stringify({ secretKey: "51423" })
         });
 
-        console.log(result);
+        if (!res.ok) {
+            console.error(await res.json());
+            return;
+        }
+
+        await blink.downloadFile(res);
+        console.log("File downloaded!");
     }
 
     return (
@@ -61,6 +87,11 @@ function App() {
             width: "max-content"
         }}>
             <button onClick={getCreateLinkResult}>Test SDK CreateLink</button>
+            <input 
+                type="text"
+                onChange={(e) => setUrl(e.target.value)}
+            />
+            <button onClick={fetchUrl}>Fetch URL</button>
             <div>Upload File</div>
             <input 
                 type="file" 
@@ -71,7 +102,7 @@ function App() {
             <span>Enter URL:</span>
             <input 
                 type="text"
-                onChange={(e) => setUrl(e.target.value)}
+                onChange={(e) => setEncryptedUrl(e.target.value)}
             />
             <button onClick={fetchEncryptedUrl}>Fetch URL</button>
         </div>

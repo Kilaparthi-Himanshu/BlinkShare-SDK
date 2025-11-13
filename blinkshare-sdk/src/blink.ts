@@ -31,6 +31,10 @@ export class Blink {
         this.baseUrl = baseUrl ?? "https://blinkshare.vercel.app/api";
     }
 
+    /**
+    * Directly uploads the user provided link with a random id
+    * and this id is used to serve the file at that link
+    */
     async createLink(options: CreateLinkOptions) {
         const { fileUrl, expiresIn = "10m", maxClicks = 1 } = options;
         const environment = detectEnvironment();
@@ -87,5 +91,27 @@ export class Blink {
             maxClicks,
             info: "🔐 Remember: share your secret key securely with the recipient.",
         };
+    }
+
+    /**
+    * Download the file at link provided with appropriate name
+    */
+    async downloadFile(res: Response) {
+        const blob = await res.blob();
+
+        // Extract filename from Content-Disposition
+        const disposition = res.headers.get("Content-Disposition");
+        let filename = "download";
+        if (disposition && disposition.includes("filename=")) {
+            filename = disposition.split("filename=")[1].replace(/"/g, "");
+        }
+
+        // Download file
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        link.href = url
+        link.download = filename;
+        link.click();
+        URL.revokeObjectURL(link.href);
     }
 }
